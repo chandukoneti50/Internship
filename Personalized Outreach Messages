@@ -1,0 +1,28 @@
+import openai
+
+# OpenAI API Key
+openai.api_key = "your_openai_api_key"
+
+def generate_message(platform, user_data):
+    """Generate a personalized outreach message based on platform and user data."""
+    prompt = f"""
+    Create a personalized outreach message for {platform}:
+    - Name: {user_data['Username']}
+    - Key Info: {user_data.get('Bio', 'No bio available')}
+    """
+    try:
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=100
+        )
+        return response.choices[0].text.strip()
+    except Exception as error:
+        print(f"Error generating message: {error}")
+        return "Unable to generate message."
+
+# Example Usage
+if __name__ == "__main__":
+    github_user = {"Username": "octocat", "Bio": "Building the future of GitHub."}
+    message = generate_message("GitHub", github_user)
+    print("Generated Message:", message)
