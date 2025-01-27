@@ -1,0 +1,67 @@
+import pandas as pd
+from flask import Flask
+from dash import Dash, dcc, html
+from sqlalchemy import create_engine
+
+# Flask App for Backend
+flask_app = Flask(__name__)
+
+# Database setup (SQLite in this case)
+DATABASE_URL = "sqlite:///./outreach.db"
+engine = create_engine(DATABASE_URL)
+
+# Function to load data from the database
+def fetch_outreach_data():
+    query = "SELECT * FROM outreach_log"
+    try:
+        df = pd.read_sql(query, con=engine)
+        return df
+    except Exception as e:
+        print(f"Error fetching data: {e}")
+        return pd.DataFrame()
+
+# Dash App for Frontend
+dash_app = Dash(__name__, server=flask_app, url_base_pathname="/dashboard/")
+
+# Layout for the Dashboard
+dash_app.layout = html.Div([
+    html.H1("Outreach Analytics Dashboard", style={"textAlign": "center"}),
+
+    dcc.Graph(id="response-chart"),
+    dcc.Graph(id="platform-chart"),
+
+    html.Div(id="table-container")
+])
+
+# Callbacks to update graphs dynamically
+@dash_app.callback(
+    [dcc.Output("response-chart", "figure"),
+     dcc.Output("platform-chart", "figure"),
+     dcc.Output("table-container", "children")]
+)
+def update_dashboard():
+    df = fetch_outreach_data()
+    if df.empty:
+        return {}, {}, html.P("No data available.")
+    
+    # Response Chart
+    response_counts = df['status'].value_counts()
+    response_fig = {
+        "data": [{"x": response_counts.index, "y": response_counts.values, "type": "bar"}],
+        "layout": {"title": "Response Status"}
+    }
+
+    # Platform Chart
+    platform_counts = df['platform'].value_counts()
+    platform_fig = {
+        "data": [{"x": platform_counts.index, "y": platform_counts.values, "type": "pie", "labels": platform_counts.index}],
+        "layout": {"title": "Outreach Platforms"}
+    }
+
+    # Data Table
+    table_html = html.Table([
+        html.Tr([html.Th(col) for col in df.columns]) +
+        [html.Tr([html.Td(df.iloc[i][col]) for col in df.columns]) for i in range(len(df))]
+    ])
+
+    return response_fig, platform_fig, table_html
