@@ -1,0 +1,31 @@
+from fastapi import FastAPI
+from celery import Celery
+import smtplib
+
+# Application setup
+app = FastAPI()
+celery_app = Celery("outreach_worker", broker="redis://localhost:6379/0")
+
+@celery_app.task
+def execute_outreach(recipient, platform, content):
+    """Handles sending outreach messages."""
+    try:
+        # Simulate sending an email
+        smtp = smtplib.SMTP("smtp.mailtrap.io", 2525)  # Use Mailtrap or any test SMTP server
+        smtp.starttls()
+        smtp.login("username", "password")  # Replace with actual credentials
+        email_message = f"Subject: Collaboration Request\n\n{content}"
+        smtp.sendmail("sender@example.com", recipient, email_message)
+        smtp.quit()
+        return {"status": "Success", "user": recipient}
+    except Exception as e:
+        return {"status": "Failed", "error": str(e)}
+
+@app.post("/start-outreach/")
+async def start_outreach(user: str, platform: str, message: str = None):
+    """Endpoint for initiating an outreach."""
+    default_msg = f"Hi {user}, we’re impressed by your work on {platform}. Let’s connect!"
+    outreach_msg = message or default_msg
+    recipient_email = f"{user.lower()}@placeholder.com"  # Mock email logic
+    execute_outreach.delay(recipient_email, platform, outreach_msg)
+    return {"message": "Outreach queued", "user": user, "platform": platform}
