@@ -1,0 +1,36 @@
+import sqlite3
+
+def setup_database():
+    """Set up the SQLite database."""
+    conn = sqlite3.connect("outreach.db")
+    cursor = conn.cursor()
+    
+    # Create table for tracking outreach
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS outreach_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        platform TEXT NOT NULL,
+        status TEXT DEFAULT 'Pending',
+        message TEXT
+    )
+    """)
+    conn.commit()
+    conn.close()
+
+def log_outreach(username, platform, message, status="Pending"):
+    """Log an outreach attempt."""
+    conn = sqlite3.connect("outreach.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO outreach_log (username, platform, message, status)
+    VALUES (?, ?, ?, ?)
+    """, (username, platform, message, status))
+    conn.commit()
+    conn.close()
+
+# Example Usage
+if __name__ == "__main__":
+    setup_database()
+    log_outreach("octocat", "GitHub", "Hi, let's collaborate!", "Sent")
+    print("Outreach logged.")
