@@ -1,0 +1,30 @@
+import requests
+
+# LinkedIn API Credentials
+LINKEDIN_API_URL = "https://api.linkedin.com/v2"
+ACCESS_TOKEN = "your_linkedin_access_token"  # Replace with your LinkedIn token
+
+def get_linkedin_profile(person_id):
+    """Fetch LinkedIn profile data using a person ID."""
+    endpoint = f"{LINKEDIN_API_URL}/people/{person_id}"
+    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
+    
+    try:
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return {
+            "FirstName": data.get("localizedFirstName"),
+            "LastName": data.get("localizedLastName"),
+            "Headline": data.get("headline"),
+            "PublicProfile": data.get("vanityName"),
+        }
+    except requests.exceptions.RequestException as error:
+        print(f"Error fetching LinkedIn profile: {error}")
+        return None
+
+# Example Usage
+if __name__ == "__main__":
+    person_id = "sample_person_id"  # Replace with the actual ID
+    profile = get_linkedin_profile(person_id)
+    print("LinkedIn Profile:", profile)
