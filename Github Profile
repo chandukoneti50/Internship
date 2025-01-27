@@ -1,0 +1,71 @@
+import requests
+
+# Base URL for GitHub API
+BASE_URL = "https://api.github.com"
+ACCESS_TOKEN = "your_personal_access_token"  # Replace with your GitHub token
+
+# Function to prepare headers
+def prepare_headers(token):
+    return {"Authorization": f"Bearer {token}"}
+
+# Function to send a request to the API
+def send_request(endpoint, token):
+    try:
+        headers = prepare_headers(token)
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+# Function to fetch details of a user
+def get_user_details(username, token):
+    url = f"{BASE_URL}/users/{username}"
+    data = send_request(url, token)
+    if data:
+        return {
+            "Username": data.get("login"),
+            "Bio": data.get("bio", "No bio available"),
+            "Followers": data.get("followers", 0),
+            "Following": data.get("following", 0)
+        }
+    return {}
+
+# Function to fetch repositories of a user
+def get_user_repositories(username, token):
+    url = f"{BASE_URL}/users/{username}/repos"
+    repos = send_request(url, token)
+    repo_details = []
+    if repos:
+        for repo in repos:
+            repo_details.append({
+                "Name": repo.get("name"),
+                "Stars": repo.get("stargazers_count", 0),
+                "Description": repo.get("description", "No description available")
+            })
+    return repo_details
+
+# Main workflow
+def main():
+    username = "octocat"  # Replace with the desired GitHub username
+    print("Fetching GitHub user data...")
+    user_info = get_user_details(username, ACCESS_TOKEN)
+    
+    if user_info:
+        print("\nUser Information:")
+        for key, value in user_info.items():
+            print(f"{key}: {value}")
+    
+    print("\nFetching repositories...")
+    user_repos = get_user_repositories(username, ACCESS_TOKEN)
+    
+    if user_repos:
+        print("\nRepositories:")
+        for repo in user_repos:
+            print(f"- {repo['Name']} (Stars: {repo['Stars']})")
+            print(f"  Description: {repo['Description']}\n")
+
+# Entry point
+if __name__ == "__main__":
+    main()
